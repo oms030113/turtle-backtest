@@ -145,10 +145,11 @@ def session_input(market_type, key_prefix):
         }
     else:  # crypto
         options = {
-            "24시간 전체": ("custom_kr_24h", ("00:00", "23:59"), "Asia/Seoul"),
+            "24시간 전체 (필터 없음)": ("none", None, "UTC"),
             "시간 지정 (한국시간 기준)": ("custom_kr", None, "Asia/Seoul"),
             "시간 지정 (UTC 기준)": ("custom_utc", None, "UTC"),
         }
+
 
     choice = st.selectbox(
         "백테스트 시간대",
@@ -163,13 +164,18 @@ def session_input(market_type, key_prefix):
         start_t = c1.text_input("시작 시간 (HH:MM)", "09:30",
                                 key=f"{key_prefix}_start_t")
         end_t = c2.text_input("종료 시간 (HH:MM)", "16:00",
-                              key=f"{key_prefix}_end_t")
+                            key=f"{key_prefix}_end_t")
         custom_session = (start_t, end_t)
         session_mode = "custom"
+    elif mode_key == "none":
+        # 시간 필터 없음 = regular 모드 (코인은 어차피 session 컬럼이 'crypto_24x7'이라 필터 안 걸림)
+        session_mode = "regular"
+        custom_session = None
     elif mode_key.startswith("custom_kr_") or mode_key == "custom_kr_24h":
         session_mode = "custom"
     else:
-        session_mode = mode_key  # regular/extended/premarket/postmarket
+        session_mode = mode_key
+
 
     return session_mode, custom_session, tz
 
