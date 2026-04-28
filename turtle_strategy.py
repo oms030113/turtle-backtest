@@ -327,10 +327,10 @@ class OriginalTurtleTrading:
                 }
 
                 resp = requests.get(
-                    "https://api.binance.com/api/v3/klines",
+                    "https://data-api.binance.vision/api/v3/klines",
                     params=params,
                     timeout=10
-                )
+)
                 resp.raise_for_status()
                 data = resp.json()
 
