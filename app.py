@@ -1,3 +1,5 @@
+# app.py
+
 import io
 import contextlib
 from datetime import date, timedelta
@@ -42,16 +44,6 @@ st.markdown(
         margin-top: 0.5rem;
         margin-bottom: 1.0rem;
     }
-    .metric-card {
-        background-color: #f7f8fa;
-        padding: 1.0rem;
-        border-radius: 0.8rem;
-        border: 1px solid #eeeeee;
-    }
-    .small-help {
-        color: #808080;
-        font-size: 0.8rem;
-    }
     div.stButton > button:first-child {
         background-color: #ff4b4b;
         color: white;
@@ -81,10 +73,14 @@ def parse_money(value, default=100000.0):
     try:
         if value is None:
             return float(default)
+
         value = str(value).replace(",", "").strip()
+
         if value == "":
             return float(default)
+
         return float(value)
+
     except Exception:
         return float(default)
 
@@ -101,16 +97,6 @@ def format_pct(value, decimals=2):
         return f"{float(value):,.{decimals}f}%"
     except Exception:
         return "-"
-
-
-def capture_print(func):
-    """
-    print_results() 같은 콘솔 출력 캡처용.
-    """
-    buf = io.StringIO()
-    with contextlib.redirect_stdout(buf):
-        func()
-    return buf.getvalue()
 
 
 def get_summary(turtle):
@@ -179,18 +165,39 @@ def get_summary(turtle):
 
 def plot_equity_matplotlib(turtle):
     fig, ax = plt.subplots(figsize=(13, 4.5))
-    ax.plot(turtle.df.index, turtle.df["equity"], linewidth=1.3, label="Strategy Equity")
-    ax.axhline(turtle.initial_capital, linestyle="--", alpha=0.5, color="gray", label="Initial Capital")
+
+    ax.plot(
+        turtle.df.index,
+        turtle.df["equity"],
+        linewidth=1.3,
+        label="Strategy Equity",
+    )
+
+    ax.axhline(
+        turtle.initial_capital,
+        linestyle="--",
+        alpha=0.5,
+        color="gray",
+        label="Initial Capital",
+    )
+
     ax.set_title(f"Equity Curve - {turtle.symbol}")
     ax.grid(True, alpha=0.25)
     ax.legend()
+
     fig.tight_layout()
     return fig
 
 
 def plot_price_matplotlib(turtle):
     fig, ax = plt.subplots(figsize=(13, 4.8))
-    ax.plot(turtle.df.index, turtle.df["Close"], linewidth=1.1, label="Close")
+
+    ax.plot(
+        turtle.df.index,
+        turtle.df["Close"],
+        linewidth=1.1,
+        label="Close",
+    )
 
     trades = turtle.get_trades_df()
 
@@ -200,17 +207,39 @@ def plot_price_matplotlib(turtle):
         exits = trades[trades["type"] == "EXIT"]
 
         if len(entries) > 0:
-            ax.scatter(entries["date"], entries["price"], marker="^", s=70, label="ENTRY", zorder=5)
+            ax.scatter(
+                entries["date"],
+                entries["price"],
+                marker="^",
+                s=70,
+                label="ENTRY",
+                zorder=5,
+            )
 
         if len(adds) > 0:
-            ax.scatter(adds["date"], adds["price"], marker="o", s=45, label="ADD", zorder=5)
+            ax.scatter(
+                adds["date"],
+                adds["price"],
+                marker="o",
+                s=45,
+                label="ADD",
+                zorder=5,
+            )
 
         if len(exits) > 0:
-            ax.scatter(exits["date"], exits["price"], marker="v", s=70, label="EXIT", zorder=5)
+            ax.scatter(
+                exits["date"],
+                exits["price"],
+                marker="v",
+                s=70,
+                label="EXIT",
+                zorder=5,
+            )
 
     ax.set_title(f"Price & Trades - {turtle.symbol}")
     ax.grid(True, alpha=0.25)
     ax.legend()
+
     fig.tight_layout()
     return fig
 
@@ -253,6 +282,7 @@ def render_summary(turtle):
     st.markdown("### 🧾 거래 통계")
 
     c1, c2, c3, c4 = st.columns(4)
+
     c1.metric("신규 진입", f"{summary['entries_count']:,}회")
     c2.metric("추가 매수", f"{summary['adds_count']:,}회")
     c3.metric("청산", f"{summary['exits_count']:,}회")
@@ -302,12 +332,29 @@ def common_inputs(
 ):
     """
     공통 입력 UI.
+    market_type을 key prefix로 사용해서 Streamlit DuplicateElementId 방지.
     """
-    symbol = st.text_input("티커", value=default_symbol)
+    key_prefix = market_type
+
+    symbol = st.text_input(
+        "티커",
+        value=default_symbol,
+        key=f"{key_prefix}_symbol",
+    )
 
     c1, c2 = st.columns(2)
-    start_date = c1.date_input("시작일", value=date.today() - timedelta(days=365))
-    end_date = c2.date_input("종료일", value=date.today())
+
+    start_date = c1.date_input(
+        "시작일",
+        value=date.today() - timedelta(days=365),
+        key=f"{key_prefix}_start_date",
+    )
+
+    end_date = c2.date_input(
+        "종료일",
+        value=date.today(),
+        key=f"{key_prefix}_end_date",
+    )
 
     c1, c2, c3 = st.columns(3)
 
@@ -315,12 +362,14 @@ def common_inputs(
         "봉 단위",
         options=interval_options,
         index=interval_options.index(default_interval) if default_interval in interval_options else 0,
+        key=f"{key_prefix}_interval",
     )
 
     initial_capital_str = c2.text_input(
         "초기 자본",
         value=f"{default_capital:,}",
         help="예: 100,000 또는 100000",
+        key=f"{key_prefix}_initial_capital",
     )
 
     risk_per_unit = c3.number_input(
@@ -330,6 +379,7 @@ def common_inputs(
         value=1.00,
         step=0.10,
         format="%.2f",
+        key=f"{key_prefix}_risk_per_unit",
     )
 
     c1, c2, c3 = st.columns(3)
@@ -340,6 +390,7 @@ def common_inputs(
         max_value=20,
         value=4,
         step=1,
+        key=f"{key_prefix}_max_units",
     )
 
     fee_rate = c2.number_input(
@@ -349,6 +400,7 @@ def common_inputs(
         value=default_fee,
         step=0.01,
         format="%.3f",
+        key=f"{key_prefix}_fee_rate",
     )
 
     slippage_rate = c3.number_input(
@@ -358,6 +410,7 @@ def common_inputs(
         value=default_slippage,
         step=0.01,
         format="%.3f",
+        key=f"{key_prefix}_slippage_rate",
     )
 
     initial_capital = parse_money(initial_capital_str, default=default_capital)
@@ -375,41 +428,61 @@ def common_inputs(
     }
 
 
-def render_result_tabs(turtle):
+def render_result_tabs(turtle, key_prefix="result"):
     render_summary(turtle)
 
     st.markdown("---")
 
-    tab1, tab2, tab3, tab4 = st.tabs(["📈 Equity", "📉 Price & Trades", "🧾 Trades", "🛠 Debug Logs"])
+    tab1, tab2, tab3, tab4 = st.tabs(
+        ["📈 Equity", "📉 Price & Trades", "🧾 Trades", "🛠 Debug Logs"]
+    )
 
     with tab1:
-        st.pyplot(plot_equity_matplotlib(turtle), use_container_width=True)
+        st.pyplot(
+            plot_equity_matplotlib(turtle),
+            use_container_width=True,
+        )
 
     with tab2:
-        st.pyplot(plot_price_matplotlib(turtle), use_container_width=True)
+        st.pyplot(
+            plot_price_matplotlib(turtle),
+            use_container_width=True,
+        )
 
     with tab3:
         trades = turtle.get_trades_df()
+
         if len(trades) > 0:
-            st.dataframe(trades, use_container_width=True)
+            st.dataframe(
+                trades,
+                use_container_width=True,
+            )
+
             st.download_button(
                 "거래내역 CSV 다운로드",
                 data=trades.to_csv(index=False).encode("utf-8-sig"),
                 file_name=f"{turtle.symbol}_trades.csv",
                 mime="text/csv",
+                key=f"{key_prefix}_trades_download",
             )
         else:
             st.info("거래내역이 없습니다.")
 
     with tab4:
         logs = turtle.get_debug_log_df()
+
         if len(logs) > 0:
-            st.dataframe(logs, use_container_width=True)
+            st.dataframe(
+                logs,
+                use_container_width=True,
+            )
+
             st.download_button(
                 "디버그 로그 CSV 다운로드",
                 data=logs.to_csv(index=False).encode("utf-8-sig"),
                 file_name=f"{turtle.symbol}_debug_logs.csv",
                 mime="text/csv",
+                key=f"{key_prefix}_logs_download",
             )
         else:
             st.info("디버그 로그가 없습니다.")
@@ -418,24 +491,38 @@ def render_result_tabs(turtle):
 # ─────────────────────────────────────────
 # Header
 # ─────────────────────────────────────────
-st.markdown('<div class="main-title">🐢 Original Turtle Trading Backtest</div>', unsafe_allow_html=True)
 st.markdown(
-    '<div class="sub-title">S1: 20봉 돌파 / 10봉 청산 · S2: 55봉 돌파 / 20봉 청산 · N=20EMA(TR) · 종가 확정 후 다음 봉 시가 체결</div>',
+    '<div class="main-title">🐢 Original Turtle Trading Backtest</div>',
+    unsafe_allow_html=True,
+)
+
+st.markdown(
+    '<div class="sub-title">'
+    "S1: 20봉 돌파 / 10봉 청산 · "
+    "S2: 55봉 돌파 / 20봉 청산 · "
+    "N=20EMA(TR) · "
+    "종가 확정 후 다음 봉 시가 체결"
+    "</div>",
     unsafe_allow_html=True,
 )
 
 
 # ─────────────────────────────────────────
-# Tabs
+# Main Tabs
 # ─────────────────────────────────────────
-tab_us, tab_kr, tab_crypto = st.tabs(["🇺🇸 미국 주식/ETF", "🇰🇷 한국 주식", "₿ 비트코인/코인"])
+tab_us, tab_kr, tab_crypto = st.tabs(
+    ["🇺🇸 미국 주식/ETF", "🇰🇷 한국 주식", "₿ 비트코인/코인"]
+)
 
 
 # ─────────────────────────────────────────
 # US Stock Tab
 # ─────────────────────────────────────────
 with tab_us:
-    st.markdown('<div class="section-title">미국 주식/ETF 백테스트</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-title">미국 주식/ETF 백테스트</div>',
+        unsafe_allow_html=True,
+    )
 
     inputs = common_inputs(
         market_type="us",
@@ -459,34 +546,51 @@ with tab_us:
             "커스텀 시간",
         ],
         index=0,
+        key="us_session_label",
     )
 
     session_mode = "regular"
     custom_session = None
-    custom_execution_control = True
+    custom_execution_control = False
     custom_data_session = "regular"
 
     if session_label == "정규장 (09:30~16:00 ET)":
         session_mode = "regular"
         custom_execution_control = False
+        custom_data_session = "regular"
 
     elif session_label == "프리+정규+애프터":
         session_mode = "extended"
         custom_execution_control = False
+        custom_data_session = "extended"
 
     elif session_label == "프리마켓":
         session_mode = "premarket"
         custom_execution_control = False
+        custom_data_session = "regular"
 
     elif session_label == "애프터마켓":
         session_mode = "postmarket"
         custom_execution_control = False
+        custom_data_session = "regular"
 
     elif session_label == "커스텀 시간":
         session_mode = "custom"
+
         c1, c2 = st.columns(2)
-        custom_start = c1.text_input("커스텀 시작 시간 ET", value="09:30")
-        custom_end = c2.text_input("커스텀 종료 시간 ET", value="12:30")
+
+        custom_start = c1.text_input(
+            "커스텀 시작 시간 ET",
+            value="09:30",
+            key="us_custom_start",
+        )
+
+        custom_end = c2.text_input(
+            "커스텀 종료 시간 ET",
+            value="12:30",
+            key="us_custom_end",
+        )
+
         custom_session = (custom_start, custom_end)
 
         custom_data_session = st.selectbox(
@@ -494,9 +598,12 @@ with tab_us:
             options=["regular", "extended", "raw"],
             index=0,
             help="보통 regular 추천. custom 시간은 매매 가능 시간 제어로만 사용합니다.",
+            key="us_custom_data_session",
         )
 
         custom_execution_control = True
+
+    st.info("미국 주식/ETF 탭에서는 공매도 기능을 사용하지 않습니다.")
 
     config = {
         "symbol": inputs["symbol"],
@@ -517,25 +624,39 @@ with tab_us:
         "custom_data_session": custom_data_session,
     }
 
-    if st.button("🚀 미국 주식 백테스트 실행", key="run_us"):
+    if st.button(
+        "🚀 미국 주식 백테스트 실행",
+        key="run_us",
+    ):
         try:
             turtle = run_backtest_with_config(config)
             st.session_state["last_turtle_us"] = turtle
+
             st.success("백테스트 완료")
-            render_result_tabs(turtle)
+            render_result_tabs(turtle, key_prefix="us_current")
+
         except Exception as e:
             st.error(f"오류 발생: {e}")
 
     if "last_turtle_us" in st.session_state:
-        with st.expander("이전 미국 주식 결과 다시 보기", expanded=False):
-            render_result_tabs(st.session_state["last_turtle_us"])
+        with st.expander(
+            "이전 미국 주식 결과 다시 보기",
+            expanded=False,
+        ):
+            render_result_tabs(
+                st.session_state["last_turtle_us"],
+                key_prefix="us_previous",
+            )
 
 
 # ─────────────────────────────────────────
 # Korean Stock Tab
 # ─────────────────────────────────────────
 with tab_kr:
-    st.markdown('<div class="section-title">한국 주식 백테스트</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-title">한국 주식 백테스트</div>',
+        unsafe_allow_html=True,
+    )
 
     inputs = common_inputs(
         market_type="kr",
@@ -553,21 +674,35 @@ with tab_kr:
         "한국장 시간 필터 사용",
         value=True,
         help="보통 09:00~15:30 사용",
+        key="kr_use_custom_session",
     )
 
     if use_custom_kr_session:
         c1, c2 = st.columns(2)
-        kr_start = c1.text_input("장 시작 시간", value="09:00")
-        kr_end = c2.text_input("장 종료 시간", value="15:30")
+
+        kr_start = c1.text_input(
+            "장 시작 시간",
+            value="09:00",
+            key="kr_custom_start",
+        )
+
+        kr_end = c2.text_input(
+            "장 종료 시간",
+            value="15:30",
+            key="kr_custom_end",
+        )
 
         session_mode = "custom"
         custom_session = (kr_start, kr_end)
         custom_data_session = "custom_filter"
         custom_execution_control = False
+
     else:
-        session_mode = "regular"
-        custom_session = None
-        custom_data_session = "regular"
+        # 한국 주식에서 regular는 미국 regular와 다르므로
+        # 필터를 아예 사용하지 않는 raw에 가까운 방식으로 둠.
+        session_mode = "custom"
+        custom_session = ("00:00", "23:59")
+        custom_data_session = "custom_filter"
         custom_execution_control = False
 
     st.info("한국 주식 탭에서는 공매도 기능을 사용하지 않습니다.")
@@ -591,25 +726,39 @@ with tab_kr:
         "custom_data_session": custom_data_session,
     }
 
-    if st.button("🚀 한국 주식 백테스트 실행", key="run_kr"):
+    if st.button(
+        "🚀 한국 주식 백테스트 실행",
+        key="run_kr",
+    ):
         try:
             turtle = run_backtest_with_config(config)
             st.session_state["last_turtle_kr"] = turtle
+
             st.success("백테스트 완료")
-            render_result_tabs(turtle)
+            render_result_tabs(turtle, key_prefix="kr_current")
+
         except Exception as e:
             st.error(f"오류 발생: {e}")
 
     if "last_turtle_kr" in st.session_state:
-        with st.expander("이전 한국 주식 결과 다시 보기", expanded=False):
-            render_result_tabs(st.session_state["last_turtle_kr"])
+        with st.expander(
+            "이전 한국 주식 결과 다시 보기",
+            expanded=False,
+        ):
+            render_result_tabs(
+                st.session_state["last_turtle_kr"],
+                key_prefix="kr_previous",
+            )
 
 
 # ─────────────────────────────────────────
 # Crypto Tab
 # ─────────────────────────────────────────
 with tab_crypto:
-    st.markdown('<div class="section-title">비트코인/코인 백테스트</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-title">비트코인/코인 백테스트</div>',
+        unsafe_allow_html=True,
+    )
 
     inputs = common_inputs(
         market_type="crypto",
@@ -627,12 +776,14 @@ with tab_crypto:
         "숏 허용",
         value=True,
         help="코인 탭에서만 숏 포지션 기능을 제공합니다.",
+        key="crypto_allow_short",
     )
 
     crypto_session_mode = c2.selectbox(
         "세션",
         options=["24시간 전체", "커스텀 시간"],
         index=0,
+        key="crypto_session_mode",
     )
 
     session_mode = "regular"
@@ -642,9 +793,21 @@ with tab_crypto:
 
     if crypto_session_mode == "커스텀 시간":
         session_mode = "custom"
+
         c1, c2 = st.columns(2)
-        custom_start = c1.text_input("커스텀 시작 시간", value="00:00", key="crypto_custom_start")
-        custom_end = c2.text_input("커스텀 종료 시간", value="23:59", key="crypto_custom_end")
+
+        custom_start = c1.text_input(
+            "커스텀 시작 시간",
+            value="00:00",
+            key="crypto_custom_start",
+        )
+
+        custom_end = c2.text_input(
+            "커스텀 종료 시간",
+            value="23:59",
+            key="crypto_custom_end",
+        )
+
         custom_session = (custom_start, custom_end)
         custom_execution_control = False
         custom_data_session = "custom_filter"
@@ -670,15 +833,26 @@ with tab_crypto:
         "custom_data_session": custom_data_session,
     }
 
-    if st.button("🚀 코인 백테스트 실행", key="run_crypto"):
+    if st.button(
+        "🚀 코인 백테스트 실행",
+        key="run_crypto",
+    ):
         try:
             turtle = run_backtest_with_config(config)
             st.session_state["last_turtle_crypto"] = turtle
+
             st.success("백테스트 완료")
-            render_result_tabs(turtle)
+            render_result_tabs(turtle, key_prefix="crypto_current")
+
         except Exception as e:
             st.error(f"오류 발생: {e}")
 
     if "last_turtle_crypto" in st.session_state:
-        with st.expander("이전 코인 결과 다시 보기", expanded=False):
-            render_result_tabs(st.session_state["last_turtle_crypto"])
+        with st.expander(
+            "이전 코인 결과 다시 보기",
+            expanded=False,
+        ):
+            render_result_tabs(
+                st.session_state["last_turtle_crypto"],
+                key_prefix="crypto_previous",
+            )
