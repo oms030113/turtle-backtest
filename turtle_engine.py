@@ -1,3 +1,14 @@
+# turtle_engine.py
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import requests
+import time
+from datetime import timedelta
+import yfinance as yf
+
+
 class OriginalTurtleTrading:
     """
     Close-confirmed Turtle Trading Backtester
